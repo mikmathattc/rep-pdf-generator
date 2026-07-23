@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Custom Assessment Builder — Internal Tool — American Torch Tip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --attc-blue: #005BA1;
+    --attc-red: #F04943;
+    --attc-silver: #778592;
+    --attc-dark: #1a1a1a;
+
+    --bg-page: #f4f6f9;
+    --bg-panel: #ffffff;
+    --line: #e2e8f0;
+    --line-soft: #f1f5f9;
+    --text-main: #1e293b;
+    --text-dim: #475569;
+    --text-faint: #94a3b8;
+
+    --radius: 4px;
+    --maxw: 980px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;overflow-x:hidden;}
+  body{
+    background: var(--bg-page);
+    color: var(--text-main);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding-bottom: 100px; /* room for sticky footer */
+  }
+
+  h1, h2, h3, .eyebrow, .btn { font-family: 'Roboto Slab', serif; text-transform: uppercase; font-weight: 700; letter-spacing: 0.02em; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 32px 22px 0; }
+
+  /* ---- Header ---- */
+  .tool-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .tool-title h1 { font-size: 22px; color: var(--attc-dark); margin: 0 0 4px; letter-spacing: 0.01em; }
+  .tool-title p { margin: 0; color: var(--text-dim); font-size: 14px; text-transform: none; letter-spacing: normal; }
+  .internal-badge { background: var(--attc-dark); color: #fff; font-size: 11px; letter-spacing: 0.08em; padding: 6px 12px; border-radius: 3px; font-family: 'Roboto Slab', serif; text-transform: uppercase; white-space: nowrap; }
+
+  /* ---- Panels ---- */
+  .panel { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px; }
+  .panel.accent-blue { border-top: 4px solid var(--attc-blue); }
+  .panel.accent-red { border-top: 4px solid var(--attc-red); }
+
+  .panel-title { font-size: 17px; color: var(--attc-dark); margin: 0 0 4px; border-bottom: 2px solid var(--line-soft); padding-bottom: 12px; }
+  .panel-sub { color: var(--text-faint); font-size: 12.5px; text-transform: none; letter-spacing: normal; font-family: inherit; font-weight: normal; margin: -2px 0 20px; }
+
+  /* ---- Fields ---- */
+  .field-group { display: flex; flex-wrap: wrap; gap: 18px 20px; }
+  .field-group > .field { flex: 1 1 220px; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .field label .req { color: var(--attc-red); }
+  .field label small { display: block; color: var(--text-faint); font-size: 11px; font-weight: normal; text-transform: none; letter-spacing: normal; margin-top: 2px; }
+  .input-wrap input, .input-wrap select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); font-size: 14px; color: var(--text-main); font-family: inherit; background: #fff; }
+  .input-wrap input:focus, .input-wrap select:focus { outline: none; border-color: var(--attc-blue); box-shadow: 0 0 0 3px rgba(0,91,161,0.1); }
+  .input-wrap.unit { position: relative; }
+  .input-wrap.unit input { padding-left: 26px; }
+  .input-wrap.unit .prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-faint); font-size: 14px; pointer-events: none; }
+
+  .ratio-row { display: flex; align-items: center; gap: 10px; }
+  .ratio-row .input-wrap { width: 90px; flex: 0 0 auto; }
+  .ratio-row .input-wrap input { text-align: center; font-weight: 700; }
+  .ratio-suffix { font-size: 20px; font-weight: 800; color: var(--text-dim); white-space: nowrap; font-family: 'Roboto Slab', serif; }
+
+  .section-divider { grid-column: 1 / -1; margin: 4px 0 2px; font-size: 11.5px; font-weight: 700; color: var(--attc-silver); text-transform: uppercase; letter-spacing: 0.06em; width: 100%; }
+
+  /* ---- Live recalculated summary ---- */
+  .recalc-card { background: linear-gradient(135deg, #fff5f4, #fff); border: 1px solid #fbdad8; border-radius: var(--radius); padding: 22px 24px; margin-top: 6px; }
+  .recalc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .recalc-head h4 { margin: 0; font-size: 13px; color: var(--attc-red); text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Roboto Slab', serif; font-weight: 700; }
+  .recalc-head .live-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-faint); text-transform: none; letter-spacing: normal; font-family: inherit; font-weight: normal; }
+  .live-dot span { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; }
+  .recalc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 16px 20px; }
+  .recalc-item .rl { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+  .recalc-item .rv { font-size: 19px; font-weight: 800; color: var(--attc-dark); }
+  .recalc-item.total .rv { color: var(--attc-red); font-size: 24px; }
+
+  /* ---- Footer / actions ---- */
+  .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--line); padding: 14px 22px; display: flex; align-items: center; justify-content: center; gap: 16px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 10; }
+  .btn { padding: 13px 30px; border-radius: var(--radius); border: none; cursor: pointer; font-size: 14px; }
+  .btn-primary { background: var(--attc-red); color: #fff; }
+  .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
+  .footer-note { font-size: 12px; color: var(--text-faint); text-transform: none; letter-spacing: normal; font-family: inherit; }
+
+  @media (max-width: 620px) {
+    .field-group > .field { flex: 1 1 100%; }
+    .tool-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="tool-header">
+    <div class="tool-title">
+      <h1>Custom Assessment Builder</h1>
+      <p>Transcribe from the Spiro record, confirm the comparison details, generate the PDF.</p>
+    </div>
+    <div class="internal-badge">Internal Tool — Not Customer Facing</div>
+  </div>
+
+  <!-- ============ PROSPECT INFO ============ -->
+  <div class="panel accent-blue">
+    <h2 class="panel-title">Prospect</h2>
+    <p class="panel-sub">Straight from the Spiro contact record.</p>
+    <div class="field-group">
+      <div class="field">
+        <label for="p-name">Contact Name</label>
+        <div class="input-wrap"><input type="text" id="p-name" placeholder="John Doe"></div>
+      </div>
+      <div class="field">
+        <label for="p-company">Company</label>
+        <div class="input-wrap"><input type="text" id="p-company" placeholder="Acme Fab"></div>
+      </div>
+      <div class="field">
+        <label for="p-email">Email</label>
+        <div class="input-wrap"><input type="email" id="p-email" placeholder="john@company.com"></div>
+      </div>
+      <div class="field">
+        <label for="p-phone">Phone</label>
+        <div class="input-wrap"><input type="text" id="p-phone" placeholder="(555) 555-5555"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHOP SETUP (transcribed, mirrors the prospect's original page) ============ -->
+  <div class="panel accent-blue">
+    <h2 class="panel-title">Shop Setup</h2>
+    <p class="panel-sub">Same numbers the prospect entered — copy these from the Spiro record's custom fields.</p>
+
+    <div class="field-group">
+      <div class="field">
+        <label for="s-gun-brand">Gun Brand</label>
+        <div class="input-wrap"><input type="text" id="s-gun-brand" placeholder="e.g., Tregaskiss"></div>
+      </div>
+      <div class="field">
+        <label for="s-wire">Wire Diameter</label>
+        <div class="input-wrap"><input type="text" id="s-wire" placeholder='e.g., .035"'></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field">
+        <label for="s-stations">Active Welding Stations</label>
+        <div class="input-wrap"><input type="number" id="s-stations" value="30" min="1"></div>
+      </div>
+      <div class="field">
+        <label for="s-hours">Hours / Day</label>
+        <div class="input-wrap"><input type="number" id="s-hours" value="16" min="0" step="0.5"></div>
+      </div>
+      <div class="field">
+        <label for="s-days">Days / Week</label>
+        <div class="input-wrap"><input type="number" id="s-days" value="5" min="1" max="7"></div>
+      </div>
+      <div class="field">
+        <label for="s-rate">Labor Rate</label>
+        <div class="input-wrap unit"><span class="prefix">$</span><input type="number" id="s-rate" value="28" min="0" step="0.5"></div>
+      </div>
+      <div class="field">
+        <label for="s-tip-price">Tip Price</label>
+        <div class="input-wrap unit"><span class="prefix">$</span><input type="number" id="s-tip-price" value="1.50" min="0" step="0.05"></div>
+      </div>
+      <div class="field">
+        <label for="s-tips-shift">Tips Replaced / Shift</label>
+        <div class="input-wrap"><input type="number" id="s-tips-shift" value="3" min="0" step="0.5"></div>
+      </div>
+      <div class="field">
+        <label for="s-tip-time">Minutes Lost / Change</label>
+        <div class="input-wrap"><input type="number" id="s-tip-time" value="5" min="0" step="0.5"></div>
+      </div>
+    </div>
+
+    <!-- Live recalculated summary — reuses the exact math from the original diagnostic tool -->
+    <div class="recalc-card">
+      <div class="recalc-head">
+        <h4>Recalculated Bleed Summary</h4>
+        <div class="live-dot"><span></span>Updates as you type — sanity-check against Spiro</div>
+      </div>
+      <div class="recalc-grid">
+        <div class="recalc-item"><div class="rl">Tips Wasted / Year</div><div class="rv" id="r-tips">—</div></div>
+        <div class="recalc-item"><div class="rl">Tip Cost Wasted / Year</div><div class="rv" id="r-tip-cost">—</div></div>
+        <div class="recalc-item"><div class="rl">Hours Lost / Year</div><div class="rv" id="r-hours">—</div></div>
+        <div class="recalc-item"><div class="rl">Payroll Cost Lost / Year</div><div class="rv" id="r-payroll">—</div></div>
+        <div class="recalc-item"><div class="rl">FTE Equivalent Lost</div><div class="rv" id="r-fte">—</div></div>
+        <div class="recalc-item total"><div class="rl">Total Annual Bleed</div><div class="rv" id="r-total">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ COMPARISON DETAILS (the genuinely new fields) ============ -->
+  <div class="panel accent-red">
+    <h2 class="panel-title">Comparison Details</h2>
+    <p class="panel-sub">The part only a human can fill in — confirmed on the call, not in the original submission.</p>
+
+    <div class="field-group">
+      <div class="field">
+        <label for="s-tip-brand">Tip Brand / Product Line<small>Confirmed on the call — may be more specific than what's in Spiro.</small></label>
+        <div class="input-wrap">
+          <select id="s-tip-brand">
+            <option value="" disabled selected>Select brand + line...</option>
+            <option value="Tregaskiss Tough Lock">Tregaskiss Tough Lock — 1:1</option>
+            <option value="Bernard Acculock">Bernard Acculock — 1.5:1</option>
+            <option value="Bernard Centerfire">Bernard Centerfire — 4:1</option>
+            <option value="Tweco 14">Tweco 14 — 5:1</option>
+            <option value="Tweco 14H">Tweco 14H — 3:1</option>
+            <option value="Tweco 16">Tweco 16 — 1:1</option>
+            <option value="Lincoln Magnum KP2744 series">Lincoln Magnum KP2744 series — 3:1</option>
+            <option value="Lincoln Magnum KP2745 series">Lincoln Magnum KP2745 series — 2:1</option>
+            <option value="Tregaskiss Conventional">Tregaskiss Conventional — 3:1</option>
+            <option value="Bernard Eliptical">Bernard Eliptical — 5:1</option>
+            <option value="Other">Other / Not Listed</option>
+          </select>
+        </div>
+        <div class="field" id="s-tip-brand-other-wrap" style="display:none; margin-top: 12px; margin-bottom: 0;">
+          <label for="s-tip-brand-other">Specify Product<small style="color:var(--attc-red);">No field data on this product — you'll need to set the ratio manually.</small></label>
+          <div class="input-wrap"><input type="text" id="s-tip-brand-other" placeholder="e.g., Bernard Q-Gun"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="c-reduction">Expected Ratio<small id="c-reduction-note">Select a tip brand above to auto-fill from field data — override anytime if you have shop-specific intel.</small></label>
+        <div class="ratio-row">
+          <div class="input-wrap"><input type="number" id="c-reduction" min="1" step="0.5" placeholder="4"></div>
+          <span class="ratio-suffix">: 1</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="c-attc-tip">ATTC Replacement Tip<small>What you'd be moving them to — this is what shows on the PDF.</small></label>
+        <div class="input-wrap"><input type="text" id="c-attc-tip" placeholder="e.g., Lightning 63 Series"></div>
+      </div>
+      <div class="field">
+        <label for="c-attc-tip-price">ATTC Tip Price<small>Not assumed from the ratio — priced on its own, since ATTC tips aren't proportionally cheaper (sometimes the opposite).</small></label>
+        <div class="input-wrap unit"><span class="prefix">$</span><input type="text" inputmode="decimal" id="c-attc-tip-price" placeholder="2.34"></div>
+      </div>
+    </div>
+
+    <div class="section-divider">Prepared By</div>
+    <div class="field-group">
+      <div class="field">
+        <label for="c-rep-name">Sales Rep Name</label>
+        <div class="input-wrap"><input type="text" id="c-rep-name" placeholder="Your name"></div>
+      </div>
+      <div class="field">
+        <label for="c-rep-email">Sales Rep Email</label>
+        <div class="input-wrap"><input type="email" id="c-rep-email" placeholder="you@attc.com"></div>
+      </div>
+      <div class="field">
+        <label for="c-rep-phone">Sales Rep Phone</label>
+        <div class="input-wrap"><input type="text" id="c-rep-phone" placeholder="(555) 555-5555"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sticky-footer">
+  <button class="btn btn-primary" id="generate-btn">Generate PDF</button>
+  <div class="footer-note">Opens the finished document in a new tab — use your browser's Print → Save as PDF from there.</div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const usd = n => "$" + Math.round(n).toLocaleString("en-US");
+  const num = (el, fallback) => { const v = parseFloat(el.value); return isNaN(v) ? fallback : v; };
+
+  const els = {
+    stations: $("s-stations"), hours: $("s-hours"), days: $("s-days"),
+    rate: $("s-rate"), tipPrice: $("s-tip-price"), tipsShift: $("s-tips-shift"), tipTime: $("s-tip-time")
+  };
+
+  const WEEKS_PER_YEAR = 50;
+  const STANDARD_WORK_YEAR = 2000;
+
+  function computeCurrent() {
+    const N = Math.max(0, num(els.stations, 0));
+    const hours = Math.max(0, num(els.hours, 0));
+    const daysWk = Math.max(0, num(els.days, 0));
+    const rate = Math.max(0, num(els.rate, 0));
+    const tipPrice = Math.max(0, num(els.tipPrice, 0));
+    const tipQty = Math.max(0, num(els.tipsShift, 0));
+    const tipTime = Math.max(0, num(els.tipTime, 0));
+
+    const workDays = daysWk * WEEKS_PER_YEAR;
+    const shiftsPerDay = hours / 8;
+    const dailyTipsPerStation = tipQty * shiftsPerDay;
+    const totalDailyMinsPerStation = dailyTipsPerStation * tipTime;
+
+    const totalAnnualTipsBleed = dailyTipsPerStation * workDays * N;
+    const totalAnnualTipCostBleed = totalAnnualTipsBleed * tipPrice;
+
+    const totalAnnualHoursBleed = (totalDailyMinsPerStation * workDays * N) / 60;
+    const totalAnnualPayrollBleed = totalAnnualHoursBleed * rate;
+    const totalFteBleed = totalAnnualHoursBleed / STANDARD_WORK_YEAR;
+
+    const totalAnnualBleed = totalAnnualPayrollBleed + totalAnnualTipCostBleed;
+
+    return {
+      N, hours, daysWk, rate, tipPrice,
+      totalAnnualTipsBleed, totalAnnualTipCostBleed,
+      totalAnnualHoursBleed, totalAnnualPayrollBleed, totalFteBleed, totalAnnualBleed
+    };
+  }
+
+  function recalc() {
+    const r = computeCurrent();
+    $("r-tips").textContent = Math.round(r.totalAnnualTipsBleed).toLocaleString("en-US");
+    $("r-tip-cost").textContent = usd(r.totalAnnualTipCostBleed);
+    $("r-hours").textContent = Math.round(r.totalAnnualHoursBleed).toLocaleString("en-US") + " hrs";
+    $("r-payroll").textContent = usd(r.totalAnnualPayrollBleed);
+    $("r-fte").textContent = r.totalFteBleed.toFixed(1);
+    $("r-total").textContent = usd(r.totalAnnualBleed);
+  }
+
+  Object.values(els).forEach(el => el.addEventListener("input", recalc));
+  recalc();
+
+  // ---- Brand-driven ratio auto-fill ----
+  // Real field data, provided 2026-07-23. Key must exactly match the
+  // <option value="..."> in the #s-tip-brand dropdown.
+  const BRAND_RATIOS = {
+    "Tregaskiss Tough Lock": 1,
+    "Bernard Acculock": 1.5,
+    "Bernard Centerfire": 4,
+    "Tweco 14": 5,
+    "Tweco 14H": 3,
+    "Tweco 16": 1,
+    "Lincoln Magnum KP2744 series": 3,
+    "Lincoln Magnum KP2745 series": 2,
+    "Tregaskiss Conventional": 3,
+    "Bernard Eliptical": 5
+    // "Other" intentionally excluded — falls through to the "no data" state below.
+  };
+
+  const tipBrandSelect = $("s-tip-brand");
+  const reductionInput = $("c-reduction");
+  const reductionNote = $("c-reduction-note");
+  let reductionManuallyEdited = false;
+
+  const DEFAULT_NOTE = "Select a tip brand above to auto-fill from field data — override anytime if you have shop-specific intel.";
+
+  const tipBrandOtherWrap = $("s-tip-brand-other-wrap");
+
+  tipBrandSelect.addEventListener("change", () => {
+    const ratio = BRAND_RATIOS[tipBrandSelect.value];
+    reductionManuallyEdited = false; // a new brand selection resets manual-override tracking
+
+    tipBrandOtherWrap.style.display = tipBrandSelect.value === "Other" ? "block" : "none";
+
+    if (ratio !== undefined) {
+      reductionInput.value = ratio;
+      reductionNote.textContent = `Auto-filled from field data for ${tipBrandSelect.value}. Edit if this shop's case is different.`;
+      reductionNote.style.color = "";
+    } else {
+      reductionInput.value = "";
+      reductionNote.textContent = tipBrandSelect.value === "Other"
+        ? "No field data — this is an unlisted product. Set the ratio manually based on your own judgment."
+        : `No field data yet for ${tipBrandSelect.value} — set the ratio manually.`;
+      reductionNote.style.color = "var(--attc-red)";
+    }
+  });
+
+  reductionInput.addEventListener("input", () => {
+    if (!reductionManuallyEdited) {
+      reductionManuallyEdited = true;
+      reductionNote.textContent = "Manually entered — overrides the field-data default.";
+      reductionNote.style.color = "";
+    }
+  });
+
+  // ---- Generate PDF: package the form + computed numbers, hand off via URL ----
+  const generateBtn = $("generate-btn");
+  generateBtn.disabled = false;
+
+  generateBtn.addEventListener("click", () => {
+    const cur = computeCurrent();
+
+    const ratio = Math.max(0, num(reductionInput, 0));
+    const safeRatio = ratio > 0 ? ratio : 1; // avoid divide-by-zero if left blank
+    const attcTipPrice = Math.max(0, num($("c-attc-tip-price"), 0));
+
+    // Corrected projection: ratio applies to VOLUME (tips, hours) since that's what
+    // the changeover ratio actually describes. Tip cost uses real ATTC pricing,
+    // never assumed to scale with the ratio. Payroll uses the same labor rate as today.
+    const projTips = cur.totalAnnualTipsBleed / safeRatio;
+    const projTipCost = projTips * attcTipPrice;
+    const projHours = cur.totalAnnualHoursBleed / safeRatio;
+    const projPayroll = projHours * cur.rate;
+    const projTotal = projTipCost + projPayroll;
+
+    const savingsTotal = cur.totalAnnualBleed - projTotal;
+    const hoursReclaimed = cur.totalAnnualHoursBleed - projHours;
+
+    const tipBrandRaw = tipBrandSelect.value;
+    const tipBrand = tipBrandRaw === "Other"
+      ? ($("s-tip-brand-other").value || "their current product")
+      : (tipBrandRaw || "their current product");
+
+    const fullName = $("p-name").value.trim();
+    const firstName = fullName ? fullName.split(" ")[0] : "there";
+
+    const repEmail = $("c-rep-email").value.trim();
+    const repPhone = $("c-rep-phone").value.trim();
+
+    const data = {
+      company: $("p-company").value || "Your Company",
+      firstName: firstName,
+      brand: tipBrand,
+      attcTip: $("c-attc-tip").value || "the recommended ATTC tip",
+      ratio: safeRatio,
+      gun: $("s-gun-brand").value || "Not specified",
+      wire: $("s-wire").value || "Not specified",
+      stations: cur.N,
+      schedule: `${cur.hours} hrs/day, ${cur.daysWk} days/wk`,
+      date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+      cur: {
+        tips: Math.round(cur.totalAnnualTipsBleed),
+        tipPrice: cur.tipPrice,
+        tipCost: Math.round(cur.totalAnnualTipCostBleed),
+        hours: Math.round(cur.totalAnnualHoursBleed),
+        payroll: Math.round(cur.totalAnnualPayrollBleed),
+        total: Math.round(cur.totalAnnualBleed)
+      },
+      proj: {
+        tips: Math.round(projTips),
+        tipPrice: attcTipPrice,
+        tipCost: Math.round(projTipCost),
+        hours: Math.round(projHours),
+        payroll: Math.round(projPayroll),
+        total: Math.round(projTotal)
+      },
+      savingsTotal: Math.round(savingsTotal),
+      hoursReclaimed: Math.round(hoursReclaimed),
+      repName: $("c-rep-name").value || "American Torch Tip",
+      repContact: [repEmail, repPhone].filter(Boolean).join("  •  ")
+    };
+
+    const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
+    window.open(`pdf-preview.html#data=${encoded}`, "_blank");
+  });
+})();
+</script>
+
+</body>
+</html>
